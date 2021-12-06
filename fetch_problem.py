@@ -35,10 +35,10 @@ for problem in problems:
 
   if not os.path.exists(f"{year}/{problem}/solve.py"):
     open(f"{year}/{problem}/solve.py", 'w').write("""
-  #!/usr/bin/env python3 
-  data = open('input.txt', 'r').read().splitlines()
+#!/usr/bin/env python3 
+data = open('input.txt', 'r').read().splitlines()
 
-  for line in data:
-    print(line)
+for line in data:
+  print(line)
     """.strip())
     os.chmod(f"{year}/{problem}/solve.py", 0o744)
