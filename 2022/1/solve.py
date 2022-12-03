@@ -22,4 +22,4 @@ for i in range(3):
   values_sum += values[i]
 
 
-print(values_sum)
+print(values_sum, values[0])
