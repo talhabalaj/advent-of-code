@@ -32,8 +32,11 @@ problems = args.problems
 template = """#!/usr/bin/env python3
 data = open('input.txt', 'r').read().splitlines()
 
+def print_debug(*args):
+  print(*args, file=sys.stderr)
+
 for line in data:
-  print(line)"""
+  print_debug(line)"""
 
 
 def fetch_statment(year, problem):
@@ -55,21 +58,17 @@ def fetch_statment(year, problem):
 
 def fetch(year, problems):
   for problem in problems:
-    advent_url = "https://adventofcode.com/{}/day/{}/input".format(
+    url = "https://adventofcode.com/{}/day/{}/input".format(
         year, problem)
     data_input = requests.get(
-        advent_url, headers={'cookie': env_map['COOKIE']}).text
+        url, headers={'cookie': env_map['COOKIE']}).text
 
     if data_input.startswith("Please don't repeatedly request this endpoint before it unlocks!"):
-      print(data_input)
-      return
+      return print(data_input)
 
     os.makedirs(f"{year}/{problem}", exist_ok=True)
-
     fetch_statment(year, problem)
-
     open(f"{year}/{problem}/input.txt", 'w').write(data_input)
-
     create_answer_file(year, problem, 1)
 
 
@@ -77,6 +76,7 @@ def create_answer_file(year, problem, level, template=template):
   file_name = f"{year}/{problem}/solve{'' if level == 1 else '_2'}.py"
   if not os.path.exists(file_name):
     open(file_name, 'w').write(template)
+  
   os.chmod(file_name, 0o744)
 
 
@@ -100,7 +100,7 @@ def submit(year, problems, level):
       integer = int(result)
     except ValueError:
       print(
-          f"Result is not an integer, get {len(result)} characters of non-integer data, please only print result to stdout, using stderr for debugging")
+          f"Result is not an integer, got {len(result)} characters of non-integer data, please only print result to stdout, using stderr for debugging")
       return
 
     data = {
