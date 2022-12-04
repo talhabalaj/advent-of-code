@@ -21,7 +21,8 @@ parser.add_argument('-y', type=int, help="The year of the problem",
                     dest="year",  default=datetime.now().year)
 parser.add_argument('problems', type=int,  nargs='+',
                     metavar="problem",   help="The list of problem to fetch")
-parser.add_argument('-o', '--operation', type=str, default="fetch")
+parser.add_argument('-o', '--operation', type=str,
+                    default="fetch", choices=["fetch", "submit"],)
 parser.add_argument('-l', '--level', type=int, default=1)
 
 args = parser.parse_args()
@@ -34,19 +35,23 @@ data = open('input.txt', 'r').read().splitlines()
 for line in data:
   print(line)"""
 
+
 def fetch_statment(year, problem):
   url = f"https://adventofcode.com/{year}/day/{problem}"
   page = requests.get(url, headers={
-    'cookie': env_map['COOKIE']
+      'cookie': env_map['COOKIE']
   }).text
 
   soup = BeautifulSoup(page, 'html.parser')
   soup.find('header').decompose()
-  for each in soup.find_all('script'): each.decompose() 
-  for each in soup.find_all(id="sidebar"): each.decompose()
+  for each in soup.find_all('script'):
+    each.decompose()
+  for each in soup.find_all(id="sidebar"):
+    each.decompose()
   result = markdownify.markdownify(str(soup))
-  
+
   open(f"{year}/{problem}/statement.md", 'w').write(result)
+
 
 def fetch(year, problems):
   for problem in problems:
@@ -110,7 +115,7 @@ def submit(year, problems, level):
     soup = BeautifulSoup(data_input.text, 'html.parser')
     response = soup.find('article').text
     do_we_win = response.startswith("That's the right answer!")
-    
+
     print(response)
 
     if do_we_win and level == 1:
@@ -120,8 +125,9 @@ def submit(year, problems, level):
       create_answer_file(year, problem, 2, template=open(file_name).read())
       print("Created answer file for next level")
 
+
 if args.operation == "fetch":
-  fetch(year, problems)  
+  fetch(year, problems)
 elif args.operation == "submit":
   submit(year, problems, args.level)
 else:
