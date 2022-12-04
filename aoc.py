@@ -6,6 +6,7 @@ import argparse
 from datetime import datetime
 import subprocess
 from bs4 import BeautifulSoup
+import markdownify
 
 envs = open('.env').read().splitlines()
 env_map = {}
@@ -27,13 +28,25 @@ args = parser.parse_args()
 year = args.year
 problems = args.problems
 
-template = """
-#!/usr/bin/env python3
+template = """#!/usr/bin/env python3
 data = open('input.txt', 'r').read().splitlines()
 
 for line in data:
   print(line)"""
 
+def fetch_statment(year, problem):
+  url = f"https://adventofcode.com/{year}/day/{problem}"
+  page = requests.get(url, headers={
+    'cookie': env_map['COOKIE']
+  }).text
+
+  soup = BeautifulSoup(page, 'html.parser')
+  soup.find('header').decompose()
+  for each in soup.find_all('script'): each.decompose() 
+  for each in soup.find_all(id="sidebar"): each.decompose()
+  result = markdownify.markdownify(str(soup))
+  
+  open(f"{year}/{problem}/statement.md", 'w').write(result)
 
 def fetch(year, problems):
   for problem in problems:
@@ -47,6 +60,8 @@ def fetch(year, problems):
       return
 
     os.makedirs(f"{year}/{problem}", exist_ok=True)
+
+    fetch_statment(year, problem)
 
     open(f"{year}/{problem}/input.txt", 'w').write(data_input)
 
@@ -92,7 +107,6 @@ def submit(year, problems, level):
 
     data_input = requests.post(advent_url, data=data, headers={
                                'cookie': env_map['COOKIE']})
-    print(data_input.status_code)
     soup = BeautifulSoup(data_input.text, 'html.parser')
     response = soup.find('article').text
     do_we_win = response.startswith("That's the right answer!")
@@ -100,11 +114,14 @@ def submit(year, problems, level):
     print(response)
 
     if do_we_win and level == 1:
-      print("Creating answer file for next level")
+      print("Fetching level 2 statement...")
+      fetch_statment(year, problem)
+      print("Fetching level 2 complete")
       create_answer_file(year, problem, 2, template=open(file_name).read())
+      print("Created answer file for next level")
 
 if args.operation == "fetch":
-  fetch(year, problems)
+  fetch(year, problems)  
 elif args.operation == "submit":
   submit(year, problems, args.level)
 else:
