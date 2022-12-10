@@ -30,6 +30,7 @@ year = args.year
 problems = args.problems
 
 template = """#!/usr/bin/env python3
+import sys
 data = open('input.txt', 'r').read().splitlines()
 
 def print_debug(*args):
@@ -94,27 +95,33 @@ def submit(year, problems, level):
 
     process_completed = subprocess.run(file_name, capture_output=True, cwd=cwd)
     result = process_completed.stdout
-    integer = None
+    r = None
 
     try:
-      integer = int(result)
+      r = int(result)
     except ValueError:
-      print(
-          f"Result is not an integer, got {len(result)} characters of non-integer data, please only print result to stdout, using stderr for debugging")
-      return
+      # remove leading unicode characters
+      r = result.decode('ascii').strip()
 
     data = {
         'level': level,
-        'answer': integer,
+        'answer': r,
     }
 
-    print(f"Submitting {integer} for problem {problem} level {level}")
+    print(f"Submitting {r} for problem {problem} level {level}")
+
 
     data_input = requests.post(advent_url, data=data, headers={
                                'cookie': env_map['COOKIE']})
+    
+    text = data_input.text
+    if text.startswith("You gave an answer too recently") or text.startswith("You're posting too much data"):
+      print(text)
+      return
+
     soup = BeautifulSoup(data_input.text, 'html.parser')
     response = soup.find('article').text
-    do_we_win = response.startswith("That's the right answer!")
+    do_we_win = response.startswith("That's the right answer!") or response.startswith("You don't seem to be solving the right level.")
 
     print(response)
 
